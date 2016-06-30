@@ -1,4 +1,4 @@
-https://travis-ci.org/Fabszn/scaffolding-plugin-lagom.svg?branch=master
+[![Build Status](https://travis-ci.org/Fabszn/scaffolding-plugin-lagom.svg?branch=master)](https://travis-ci.org/Fabszn/scaffolding-plugin-lagom)
 
 # Scaffolding-plugin for [Lagom - The Reactive Microservices Framework](http://www.lagomframework.com/)
 
