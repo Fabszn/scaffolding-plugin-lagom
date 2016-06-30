@@ -24,9 +24,13 @@ Actually, service is generated with Java language.
 
 # How to setup the plugin
 
-Today the plugin is not deployed on one dependency repository. the unique way to use it, is to add it into the unmanaged lib sbt directory : *lib*.
+Today the plugin is not deployed on one dependency repository. the unique way to use it, is to clone the repository and use the following command on sbt :
 
-Now the plugin is avalaible in your classpath.
+```
+sbt publishLocal
+```
+
+Now the plugin is avalaible in your local repository.
 Fill the plugins.sbt file (under project directory by convention) with the following statement :
 ```
 addSbtPlugin("com.lightbend.lagom.sbt" % "scaffolding-plugin-lagom" % "[current version of plugin]")
