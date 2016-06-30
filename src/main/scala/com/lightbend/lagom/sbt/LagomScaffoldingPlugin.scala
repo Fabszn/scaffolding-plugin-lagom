@@ -1,33 +1,35 @@
 package com.lightbend.lagom.sbt
 
 import sbt.Keys._
-import sbt.{IO, _}
+import sbt._
+import sbt.complete.DefaultParsers._
+import sbt.complete.Parser
 
-import scala.util.{Failure, Success, Try}
 
 /**
   * Created by fsznajderman on 29/06/16.
   */
 object LagomScaffoldingPlugin extends AutoPlugin {
 
+  //definition of parser
+  val org: Parser[String] = "org:"
+  val cmdParser: Parser[(String, Option[String])] =
+    (Space ~> (StringBasic ~ (Space ~> org ~> StringBasic).?)) !!! ("Command should looks like : newService <name of service> [org:name of organisation]")
 
-  val newService = inputKey[Unit]("Generate new Lagom service")
 
-  import sbt.complete.Parsers._
+  val newService = inputKey[Unit]("Create new Lagom service")
+
 
   override def projectSettings = {
     Seq(newService := {
       val log = streams.value.log
 
-      Try(spaceDelimited("<arg>").parsed) match {
-        case Success(head :: tail) => buildService(head)
-        case Failure(e) => Nil
-      }
+      buildService(cmdParser.parsed)
 
-      def buildService(serviceName: String): Unit = {
-
-        val packName = Option(organization.value)
-        if (packName.isEmpty) log.warn("no package has been defined")
+      def buildService(serviceInfo: (String, Option[String])): Unit = {
+        val serviceName = serviceInfo._1
+        val packName = serviceInfo._2.getOrElse(Option(organization.value).getOrElse(""))
+        if (packName.isEmpty) log.warn("No package has been defined")
         val sourceDir = "src/main/java"
         val resourceDir = "src/main/resources"
         log.info(managePack(packName))
@@ -37,13 +39,13 @@ object LagomScaffoldingPlugin extends AutoPlugin {
 
         //create directories
         IO.createDirectories(List(apiDir, implDir))
-        createInterfaceFile(packName.getOrElse(""), serviceName, apiDir)
-        createImplFiles(packName.getOrElse(""), serviceName.capitalize, implDir)
-        createConfFile(packName.getOrElse(""), serviceName, confDir)
+        createInterfaceFile(packName, serviceName, apiDir)
+        createImplFiles(packName, serviceName.capitalize, implDir)
+        createConfFile(packName, serviceName, confDir)
         addServiceConfToBuild(serviceName, baseDirectory.value)
       }
 
-      def managePack(packName: Option[String]): String = packName.map(_.replace(".", "/")).getOrElse("")
+      def managePack(packName: String): String = packName.replace(".", "/")
 
       def createInterfaceFile(packName: String, name: String, dir: File): Unit = {
 
@@ -127,6 +129,7 @@ object LagomScaffoldingPlugin extends AutoPlugin {
       def addServiceConfToBuild(name: String, dir: File) = {
         val sbtConf =
           s"""
+             |
              |//${name} service
              |lazy val ${name}Api = (project in file("$name-api"))
              |  .settings(
