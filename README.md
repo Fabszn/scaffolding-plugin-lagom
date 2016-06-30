@@ -18,6 +18,8 @@ sbt "newService "
 ```
 When this command is finished, you can apply runAll task to start your microservices system. Obviously, by default, your service will do nothing. But this plugin will bring you at the moment where you start design your API in Lagom interface.
 
+Actually, service is generated with Java language. 
+
 # How to setup the plugin
 
 Today the plugin is not deployed on one dependency repository. the unique way to use it, is to add it into the unmanaged lib sbt directory : *lib*.
