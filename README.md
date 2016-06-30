@@ -1,3 +1,5 @@
+https://travis-ci.org/Fabszn/scaffolding-plugin-lagom.svg?branch=master
+
 # Scaffolding-plugin for [Lagom - The Reactive Microservices Framework](http://www.lagomframework.com/)
 
 # Purpose
@@ -18,7 +20,7 @@ sbt "newService "
 ```
 When this command is finished, you can apply runAll task to start your microservices system. Obviously, by default, your service will do nothing. But this plugin will bring you at the moment where you start design your API in Lagom interface.
 
-Actually, service is generated with Java language. 
+Actually, service is generated with Java language.
 
 # How to setup the plugin
 
