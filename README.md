@@ -35,7 +35,7 @@ Fill the plugins.sbt file (under project directory by convention) with the follo
 ```
 resolvers += Resolver.url("bintray.scaffolding-plugin.resolver", url("http://dl.bintray.com/fabszn/sbt-plugins"))(Resolver.ivyStylePatterns)
 
-addSbtPlugin("com.lightbend.lagom.sbt" %% "scaffolding-plugin-lagom" % "1.0.0")
+addSbtPlugin("com.lightbend.lagom.sbt" %% "scaffolding-plugin-lagom" % "1.0.0-M1")
 ```
 
 then, enable the plugin at root project level, in your *build.sbt* file as follow :
@@ -45,18 +45,18 @@ lazy val root = (project in file("."))
     .enablePlugins(LagomScaffoldingPlugin)
 ```
 
-Setting up is now finished. you should find new task named : *newService*
+Setting up is now finished. you should find new task named : *newJavaService*
 
 # How use the plugin
 
 Using is very simple. at the sbt prompt use the following command :
 ```
-> newService [ServiceName]
+> newJavaService [ServiceName]
 ```
 
 By default, the plugin will used the **organisation** setting  defined into the project. You can override it by used the parameter : *org:*
 ```
-> newService [ServiceName] org:xx.xx.xx
+> newJavaService [ServiceName] org:xx.xx.xx
 ```
 
 That's all folks !
