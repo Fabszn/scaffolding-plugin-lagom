@@ -24,16 +24,18 @@ Actually, service is generated with Java language.
 
 # How to setup the plugin
 
-Today the plugin is not deployed on one dependency repository. the unique way to use it, is to clone the repository and use the following command on sbt :
+The plugin is available on the following repository :
 
 ```
-sbt publishLocal
+http://dl.bintray.com/fabszn/sbt-plugins
 ```
 
-Now the plugin is avalaible in your local repository.
-Fill the plugins.sbt file (under project directory by convention) with the following statement :
+Fill the plugins.sbt file (under project directory by convention) with the following statements :
+
 ```
-addSbtPlugin("com.lightbend.lagom.sbt" % "scaffolding-plugin-lagom" % "[current version of plugin]")
+resolvers += Resolver.url("bintray.scaffolding-plugin.resolver", url("http://dl.bintray.com/fabszn/sbt-plugins"))(Resolver.ivyStylePatterns)
+
+addSbtPlugin("com.lightbend.lagom.sbt" %% "scaffolding-plugin-lagom" % "1.0.0")
 ```
 
 then, enable the plugin at root project level, in your *build.sbt* file as follow :
