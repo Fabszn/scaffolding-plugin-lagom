@@ -16,7 +16,7 @@ Conclusion, you lose productivity while Lagom's framework should rise your produ
 To fix this issue, I propose one plugin to generate entirely a new service by only one command :
 
 ```
-sbt "newService "
+sbt "newJavaService"
 ```
 When this command is finished, you can apply runAll task to start your microservices system. Obviously, by default, your service will do nothing. But this plugin will bring you at the moment where you start design your API in Lagom interface.
 

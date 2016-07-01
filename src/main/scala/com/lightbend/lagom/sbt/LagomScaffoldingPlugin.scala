@@ -17,11 +17,11 @@ object LagomScaffoldingPlugin extends AutoPlugin {
     (Space ~> (StringBasic ~ (Space ~> org ~> StringBasic).?)) !!! ("Command should looks like : newService <name of service> [org:name of organisation]")
 
 
-  val newService = inputKey[Unit]("Create new Lagom service")
+  val newJavaService = inputKey[Unit]("Create new Lagom service")
 
 
   override def projectSettings = {
-    Seq(newService := {
+    Seq(newJavaService := {
       val log = streams.value.log
 
       buildService(cmdParser.parsed)
