@@ -12,9 +12,8 @@ import sbt.complete.Parser
 object LagomScaffoldingPlugin extends AutoPlugin {
 
   //definition of parser
-  val org: Parser[String] = "org:"
   val cmdParser: Parser[(String, Option[String])] =
-    (Space ~> (StringBasic ~ (Space ~> org ~> StringBasic).?)) !!! ("Command should looks like : newService <name of service> [org:name of organisation]")
+    (Space ~> (StringBasic ~ (Space ~> "org:" ~> StringBasic).?)) !!! ("Command should looks like : newService <name of service> [org:name of organisation]")
 
 
   val newJavaService = inputKey[Unit]("Create new Lagom service")
