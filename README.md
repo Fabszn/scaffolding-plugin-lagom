@@ -18,6 +18,7 @@ To fix this issue, I propose one plugin to generate entirely a new service by on
 ```
 sbt "newJavaService"
 ```
+
 When this command is finished, you can apply runAll task to start your microservices system. Obviously, by default, your service will do nothing. But this plugin will bring you at the moment where you start design your API in Lagom interface.
 
 Actually, service is generated with Java language.
@@ -58,5 +59,15 @@ By default, the plugin will used the **organisation** setting  defined into the 
 ```
 > newJavaService [ServiceName] org:xx.xx.xx
 ```
+
+# Remarks :
+
+Today, Lagom framework provided a Java API, however, with a trick, you can start to work with the Scala language. For that, the plugin provide another task that generate the service based on Scala language. Instead of used the task **newJavaService**, use the task **newScalaService** as described below:
+
+```
+> newScalaService [ServiceName]
+```
+
+
 
 That's all folks !
