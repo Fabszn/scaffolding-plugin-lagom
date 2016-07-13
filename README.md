@@ -60,7 +60,7 @@ By default, the plugin will used the **organisation** setting  defined into the 
 > newJavaService [ServiceName] org:xx.xx.xx
 ```
 
-# Remarks :
+# One more thing :
 
 Today, Lagom framework provided a Java API, however, with a trick, you can start to work with the Scala language. For that, the plugin provide another task that generate the service based on Scala language. Instead of used the task **newJavaService**, use the task **newScalaService** as described below:
 
