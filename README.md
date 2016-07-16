@@ -36,9 +36,10 @@ Fill the plugins.sbt file (under project directory by convention) with the follo
 ```
 resolvers += Resolver.url("bintray.scaffolding-plugin.resolver", url("http://dl.bintray.com/fabszn/sbt-plugins"))(Resolver.ivyStylePatterns)
 
-addSbtPlugin("com.lightbend.lagom.sbt" %% "scaffolding-plugin-lagom" % "1.0.0-M1")
-```
+addSbtPlugin("com.lightbend.lagom.sbt" %% "scaffolding-plugin-lagom" % "1.0.0-xx")
 
+```
+(*where 'xx' corresponds to the latest version, check on the bintray repository*)
 then, enable the plugin at root project level, in your *build.sbt* file as follow :
 
 ```
