@@ -245,8 +245,63 @@ object LagomScaffoldingPlugin extends AutoPlugin {
               |
             |}""".stripMargin
 
+        val command =
+          s"""package $packName
+             |
+             |import com.lightbend.lagom.javadsl.persistence.PersistentEntity
+              |import com.lightbend.lagom.serialization.Jsonable
+              |import akka.Done
+              |
+              |sealed trait ${name}Command extends Jsonable
+           """.stripMargin
+
+        val event =
+          s"""package $packName
+             |
+             |import com.lightbend.lagom.javadsl.persistence.AggregateEvent
+              |import com.lightbend.lagom.serialization.Jsonable
+              |import com.lightbend.lagom.javadsl.persistence.AggregateEventTag
+              |
+              |object ${name}Event {
+              |  val Tag = AggregateEventTag.of(classOf[${name}Event])
+              |}
+              |sealed trait ${name}Event extends AggregateEvent[${name}Event] with Jsonable {
+              |  override def aggregateTag(): AggregateEventTag[${name}Event] = ${name}Event.Tag
+              |}
+           """.stripMargin
+
+        val state =
+          s"""package $packName
+             |
+             |import com.lightbend.lagom.serialization.Jsonable
+             |
+             |class ${name}State extends Jsonable {}
+           """.stripMargin
+
+        val entity =
+          s"""package $packName
+             |
+             |import com.lightbend.lagom.javadsl.persistence.PersistentEntity
+              |import scala.collection.JavaConverters._
+              |import akka.Done
+              |import java.util.Optional
+              |import scala.compat.java8.OptionConverters._
+              |
+              |class ${name}Entity extends PersistentEntity[${name}Command, ${name}Event, ${name}State] {
+              |
+              |  override def initialBehavior(snapshotState: Optional[${name}State]): Behavior = {
+              |    val b = newBehaviorBuilder(snapshotState.orElseGet(() => ${name}State()))
+              |    b.build()
+              |  }
+              |}
+           """.stripMargin
+
         IO.append(dir / (s"${name}ServiceImpl.scala"), implementation)
         IO.append(dir / (s"${name}ServiceModule.scala"), module)
+        IO.append(dir / (s"${name}Commands.scala"), command)
+        IO.append(dir / (s"${name}Events.scala"), event)
+        IO.append(dir / (s"${name}State.scala"), state)
+        IO.append(dir / (s"${name}Entity.scala"), entity)
 
       }
       def createConfFile(packName: String, name: String, dir: File): Unit = {
