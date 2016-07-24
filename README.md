@@ -28,7 +28,7 @@ Actually, service is generated with Java language.
 The plugin is available on the following repository :
 
 ```
-http://dl.bintray.com/fabszn/sbt-plugins
+http://bintray.com/fabszn/sbt-plugins
 ```
 
 Fill the plugins.sbt file (under project directory by convention) with the following statements :
