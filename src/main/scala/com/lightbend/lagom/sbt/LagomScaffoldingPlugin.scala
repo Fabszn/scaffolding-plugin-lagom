@@ -13,9 +13,9 @@ object LagomScaffoldingPlugin extends AutoPlugin {
 
   //definition of parser
 
-  val optionnalParam: Parser[(Option[String], Option[Boolean])] = (Space ~> "org:" ~> StringBasic).? ~ (Space ~> "template:" ~> Bool).?
+  val optionnalParam: Parser[(Option[String], Option[Boolean])] = (Space ~> "org:" ~> StringBasic).? ~ (Space ~> "isTemplate:" ~> Bool).?
   val cmdParser: Parser[(String, (Option[String], Option[Boolean]))] =
-    (Space ~> (StringBasic ~ optionnalParam) !!! ("Command should looks like : newService <name of service> [org:name of organisation]"))
+    (Space ~> (StringBasic ~ optionnalParam) !!! ("Command should looks like : newService <name of service> [org:name of organisation][isTemplate:true || false]"))
 
 
   val newJavaService = inputKey[Unit]("Create new Lagom service based on Java")
@@ -32,18 +32,27 @@ object LagomScaffoldingPlugin extends AutoPlugin {
     Inputs(cmd, packName, isTemplate)
   }
 
-  def addServiceConfToBuild(name: String, dir: File) = {
+  def computeProjectDeclaration(name: String, template: Boolean): String = {
+    if (template) {
+      "project(\"" + name + "\")"
+    } else {
+      "(project in file(\"" + name + "\"))"
+    }
+
+  }
+
+  def addServiceConfToBuild(name: String, dir: File, isTemplate:Boolean) = {
     val sbtConf =
       s"""
          |
-           |//${name} service
-         |lazy val ${name}Api = (project in file("$name-api"))
+         |//${name} service
+         |lazy val ${name}Api = ${computeProjectDeclaration(name+"-api",isTemplate)}
          |  .settings(
          |    version := "1.0-SNAPSHOT",
          |    libraryDependencies += lagomJavadslApi
          |  )
          |
-              |lazy val ${name}Impl = (project in file("$name-impl"))
+         |lazy val ${name}Impl = ${computeProjectDeclaration(name+"-impl",isTemplate)}
          |  .enablePlugins(LagomJava)
          |  .settings(
          |    scalacOptions in Compile += "-Xexperimental", // this enables Scala lambdas to be passed as Java SAMs
@@ -54,7 +63,7 @@ object LagomScaffoldingPlugin extends AutoPlugin {
          |    )
          |  )
          |  .settings(lagomForkedTestSettings: _*)
-         |  .dependsOn("${name}Api")""".stripMargin
+         |  .dependsOn(${name}Api)""".stripMargin
 
     IO.append(dir / ("build.sbt"), sbtConf)
   }
@@ -80,7 +89,7 @@ object LagomScaffoldingPlugin extends AutoPlugin {
         createInterfaceFile(input.packName, input.serviceName, apiDir)
         createImplFiles(input.packName, input.serviceName.capitalize, implDir)
         createConfFile(input.packName, input.serviceName, confDir)
-        addServiceConfToBuild(input.serviceName, baseDirectory.value)
+        addServiceConfToBuild(input.serviceName, baseDirectory.value,input.template)
         log.info("Lagom(Java) has been generated successfully")
       }
 
@@ -189,7 +198,7 @@ object LagomScaffoldingPlugin extends AutoPlugin {
         createImplFiles(input.packName, input.serviceName.capitalize, implDir)
         createConfFile(input.packName, input.serviceName, confDir)
         createConverterFile(baseDirectory.value / ((input.serviceName + "-impl") + "/" + sourceDir + "/"))
-        addServiceConfToBuild(input.serviceName, baseDirectory.value)
+        addServiceConfToBuild(input.serviceName, baseDirectory.value,input.template)
         log.info("Lagom(Scala) has been generated successfully")
       }
 
