@@ -12,37 +12,49 @@ import sbt.complete.Parser
 object LagomScaffoldingPlugin extends AutoPlugin {
 
   //definition of parser
-  val cmdParser: Parser[(String, Option[String])] =
-    (Space ~> (StringBasic ~ (Space ~> "org:" ~> StringBasic).?)) !!! ("Command should looks like : newService <name of service> [org:name of organisation]")
+
+  val optionnalParam: Parser[(Option[String], Option[Boolean])] = (Space ~> "org:" ~> StringBasic).? ~ (Space ~> "template:" ~> Bool).?
+  val cmdParser: Parser[(String, (Option[String], Option[Boolean]))] =
+    (Space ~> (StringBasic ~ optionnalParam) !!! ("Command should looks like : newService <name of service> [org:name of organisation]"))
 
 
   val newJavaService = inputKey[Unit]("Create new Lagom service based on Java")
   val newScalaService = inputKey[Unit]("Create new Lagom service based on Scala")
 
+  case class Inputs(serviceName: String, packName: String, template: Boolean)
+
+
+  def paramExtractor(serviceInfo: (String, (Option[String], Option[Boolean])), organisation: String)(implicit log: Logger): Inputs = {
+    val (cmd, (org, template)) = serviceInfo
+    val packName = org.getOrElse(Option(organisation).getOrElse(""))
+    if (packName.isEmpty) log.warn("No package has been defined")
+    val isTemplate: Boolean = template.getOrElse(false)
+    Inputs(cmd, packName, isTemplate)
+  }
+
+ 
+
   override def projectSettings = {
     Seq(newJavaService := {
-      val log = streams.value.log
+      implicit val log = streams.value.log
+      buildService(paramExtractor(cmdParser.parsed, organization.value))
 
-      buildService(cmdParser.parsed)
+      def buildService(input: Inputs): Unit = {
 
-      def buildService(serviceInfo: (String, Option[String])): Unit = {
-        val serviceName = serviceInfo._1
-        val packName = serviceInfo._2.getOrElse(Option(organization.value).getOrElse(""))
-        if (packName.isEmpty) log.warn("No package has been defined")
         val sourceDir = "src/main/java"
         val resourceDir = "src/main/resources"
-        log.info(managePack(packName))
-        val apiDir = baseDirectory.value / ((serviceName + "-api") + "/" + sourceDir + "/" + managePack(packName))
-        val implDir = baseDirectory.value / ((serviceName + "-impl") + "/" + sourceDir + "/" + managePack(packName))
-        val confDir = baseDirectory.value / ((serviceName + "-impl") + "/" + resourceDir)
+        log.info(managePack(input.packName))
+        val apiDir = baseDirectory.value / ((input.serviceName + "-api") + "/" + sourceDir + "/" + managePack(input.packName))
+        val implDir = baseDirectory.value / ((input.serviceName + "-impl") + "/" + sourceDir + "/" + managePack(input.packName))
+        val confDir = baseDirectory.value / ((input.serviceName + "-impl") + "/" + resourceDir)
 
         //create directories
         IO.createDirectories(List(apiDir, implDir))
-        createInterfaceFile(packName, serviceName, apiDir)
-        createImplFiles(packName, serviceName.capitalize, implDir)
-        createConfFile(packName, serviceName, confDir)
-        addServiceConfToBuild(serviceName, baseDirectory.value)
-        log.info("Lagom(Java) has been generated successfuly")
+        createInterfaceFile(input.packName, input.serviceName, apiDir)
+        createImplFiles(input.packName, input.serviceName.capitalize, implDir)
+        createConfFile(input.packName, input.serviceName, confDir)
+        addServiceConfToBuild(input.serviceName, baseDirectory.value)
+        log.info("Lagom(Java) has been generated successfully")
       }
 
       def managePack(packName: String): String = packName.replace(".", "/")
@@ -79,10 +91,10 @@ object LagomScaffoldingPlugin extends AutoPlugin {
               | */
               |package $packName;
               |
-            |import $packName.${name}Service;
+              |import $packName.${name}Service;
               |
-           |
-           |/**
+              |
+              |/**
               | * Implementation of the ${name}Service.
               | */
               |public class ${name}ServiceImpl implements ${name}Service {
@@ -100,7 +112,7 @@ object LagomScaffoldingPlugin extends AutoPlugin {
               |import $packName.${name}Service;
               |import $packName.${name}ServiceImpl;
               |
-            |/**
+              |/**
               | * The module that binds the ${name}ServiceModule so that it can be served.
               | */
               |public class ${name}ServiceModule extends AbstractModule implements ServiceGuiceSupport {
@@ -137,7 +149,7 @@ object LagomScaffoldingPlugin extends AutoPlugin {
              |    libraryDependencies += lagomJavadslApi
              |  )
              |
-              |lazy val ${name}Impl = (project in file("$name-impl"))
+             |lazy val ${name}Impl = (project in file("$name-impl"))
              |  .enablePlugins(LagomJava)
              |  .settings(
              |    version := "1.0-SNAPSHOT",
@@ -153,29 +165,29 @@ object LagomScaffoldingPlugin extends AutoPlugin {
       }
 
     }, newScalaService := {
-      val log = streams.value.log
+      implicit val log = streams.value.log
 
-      buildService(cmdParser.parsed)
+      buildService(paramExtractor(cmdParser.parsed, organization.value))
 
-      def buildService(serviceInfo: (String, Option[String])): Unit = {
-        val serviceName = serviceInfo._1
-        val packName = serviceInfo._2.getOrElse(Option(organization.value).getOrElse(""))
-        if (packName.isEmpty) log.warn("No package has been defined")
+      def buildService(input: Inputs): Unit = {
+
+
+        if (input.packName.isEmpty) log.warn("No package has been defined")
         val sourceDir = "src/main/scala"
         val resourceDir = "src/main/resources"
-        log.info(managePack(packName))
-        val apiDir = baseDirectory.value / ((serviceName + "-api") + "/" + sourceDir + "/" + managePack(packName))
-        val implDir = baseDirectory.value / ((serviceName + "-impl") + "/" + sourceDir + "/" + managePack(packName))
-        val confDir = baseDirectory.value / ((serviceName + "-impl") + "/" + resourceDir)
+        log.info(managePack(input.packName))
+        val apiDir = baseDirectory.value / ((input.serviceName + "-api") + "/" + sourceDir + "/" + managePack(input.packName))
+        val implDir = baseDirectory.value / ((input.serviceName + "-impl") + "/" + sourceDir + "/" + managePack(input.packName))
+        val confDir = baseDirectory.value / ((input.serviceName + "-impl") + "/" + resourceDir)
 
         //create directories
         IO.createDirectories(List(apiDir, implDir))
-        createInterfaceFile(packName, serviceName, apiDir)
-        createImplFiles(packName, serviceName.capitalize, implDir)
-        createConfFile(packName, serviceName, confDir)
-        createConverterFile(baseDirectory.value / ((serviceName + "-impl") + "/" + sourceDir+ "/"))
-        addServiceConfToBuild(serviceName, baseDirectory.value)
-        log.info("Lagom(Scala) has been generated successfuly")
+        createInterfaceFile(input.packName, input.serviceName, apiDir)
+        createImplFiles(input.packName, input.serviceName.capitalize, implDir)
+        createConfFile(input.packName, input.serviceName, confDir)
+        createConverterFile(baseDirectory.value / ((input.serviceName + "-impl") + "/" + sourceDir + "/"))
+        addServiceConfToBuild(input.serviceName, baseDirectory.value)
+        log.info("Lagom(Scala) has been generated successfully")
       }
 
       def managePack(packName: String): String = packName.replace(".", "/")
@@ -332,7 +344,6 @@ object LagomScaffoldingPlugin extends AutoPlugin {
 
         IO.append(dir / "converter" / ("CompletionStageConverters.scala"), CompletionStageConverters)
       }
-
 
     })
 
