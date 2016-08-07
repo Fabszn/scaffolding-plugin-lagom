@@ -1,0 +1,16 @@
+#create a simple service based on activator template written in Java
+# 1 - we check that all files has been generated correctly
+
+> newJavaService newms
+
+$ exists newms-api/src/main/java/com/test/plugin/NewmsService.java
+$ exists newms-impl/src/main/java/com/test/plugin/NewmsServiceImpl.java
+$ exists newms-impl/src/main/java/com/test/plugin/NewmsServiceModule.java
+$ exists newms-impl/src/main/resources/application.conf
+
+# 2 - we start the service with `runAll` command
+
+> reload
+> runAll
+
+
