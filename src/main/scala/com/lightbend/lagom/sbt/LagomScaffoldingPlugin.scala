@@ -41,32 +41,7 @@ object LagomScaffoldingPlugin extends AutoPlugin {
 
   }
 
-  def addServiceConfToBuild(name: String, dir: File, isTemplate:Boolean) = {
-    val sbtConf =
-      s"""
-         |
-         |//${name} service
-         |lazy val ${name}Api = ${computeProjectDeclaration(name+"-api",isTemplate)}
-         |  .settings(
-         |    version := "1.0-SNAPSHOT",
-         |    libraryDependencies += lagomJavadslApi
-         |  )
-         |
-         |lazy val ${name}Impl = ${computeProjectDeclaration(name+"-impl",isTemplate)}
-         |  .enablePlugins(LagomJava)
-         |  .settings(
-         |    scalacOptions in Compile += "-Xexperimental", // this enables Scala lambdas to be passed as Java SAMs
-         |    version := "1.0-SNAPSHOT",
-         |    libraryDependencies ++= Seq(
-         |      lagomJavadslPersistence,
-         |      lagomJavadslTestKit
-         |    )
-         |  )
-         |  .settings(lagomForkedTestSettings: _*)
-         |  .dependsOn(${name}Api)""".stripMargin
 
-    IO.append(dir / ("build.sbt"), sbtConf)
-  }
 
 
 
@@ -162,6 +137,35 @@ object LagomScaffoldingPlugin extends AutoPlugin {
         IO.append(dir / (s"${name}ServiceModule.java"), module)
 
       }
+
+      def addServiceConfToBuild(name: String, dir: File, isTemplate:Boolean) = {
+        val sbtConf =
+          s"""
+             |
+             |//${name} service
+             |lazy val ${name}Api = ${computeProjectDeclaration(name+"-api",isTemplate)}
+             |  .settings(
+             |    version := "1.0-SNAPSHOT",
+             |    libraryDependencies += lagomJavadslApi
+             |  )
+             |
+             |lazy val ${name}Impl = ${computeProjectDeclaration(name+"-impl",isTemplate)}
+             |  .enablePlugins(LagomJava)
+             |  .settings(
+             |    version := "1.0-SNAPSHOT",
+             |    libraryDependencies ++= Seq(
+             |      lagomJavadslPersistence,
+             |      lagomJavadslTestKit
+             |    )
+             |  )
+             |  .settings(lagomForkedTestSettings: _*)
+             |  .dependsOn("${name}Api")""".stripMargin
+
+        IO.append(dir / ("build.sbt"), sbtConf)
+      }
+
+
+
       def createConfFile(packName: String, name: String, dir: File): Unit = {
 
         val applicationConf =
@@ -285,6 +289,32 @@ object LagomScaffoldingPlugin extends AutoPlugin {
         IO.append(dir / ("application.conf"), applicationConf)
       }
 
+      def addServiceConfToBuild(name: String, dir: File, isTemplate:Boolean) = {
+        val sbtConf =
+          s"""
+             |
+             |//${name} service
+             |lazy val ${name}Api = ${computeProjectDeclaration(name+"-api",isTemplate)}
+             |  .settings(
+             |    version := "1.0-SNAPSHOT",
+             |    libraryDependencies += lagomJavadslApi
+             |  )
+             |
+             |lazy val ${name}Impl = ${computeProjectDeclaration(name+"-impl",isTemplate)}
+             |  .enablePlugins(LagomJava)
+             |  .settings(
+             |    scalacOptions in Compile += "-Xexperimental", // this enables Scala lambdas to be passed as Java SAMs
+             |    version := "1.0-SNAPSHOT",
+             |    libraryDependencies ++= Seq(
+             |      lagomJavadslPersistence,
+             |      lagomJavadslTestKit
+             |    )
+             |  )
+             |  .settings(lagomForkedTestSettings: _*)
+             |  .dependsOn(${name}Api)""".stripMargin
+
+        IO.append(dir / ("build.sbt"), sbtConf)
+      }
 
       def createConverterFile(dir: File) = {
         val serviceCallConverter =
