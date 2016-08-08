@@ -1,0 +1,16 @@
+#create a simple service based on activator template written in Scala
+# 1 - we check that all files has been generated correctly
+
+> newScalaService newScalaMicro
+
+$ exists newScalaMicro-api/src/main/scala/com/test/plugin/NewScalaMicroService.scala
+$ exists newScalaMicro-impl/src/main/scala/com/test/plugin/NewScalaMicroServiceImpl.scala
+$ exists newScalaMicro-impl/src/main/scala/com/test/plugin/NewScalaMicroServiceModule.scala
+$ exists newScalaMicro-impl/src/main/resources/application.conf
+
+# now we start the service with `runAll` command
+
+
+> reload
+> runAll
+

@@ -4,7 +4,7 @@ jdk:
   - oraclejdk8
 env:
   matrix:
-    - SCRIPT="sbt -jvm-opts .travis-jvmopts publishLocal"
+    #- SCRIPT="sbt -jvm-opts .travis-jvmopts publishLocal"
     - SCRIPT="sbt -jvm-opts .travis-jvmopts publishLocal scripted"
 # important to use eval, otherwise "&&" is passed as an argument to sbt rather than being processed by bash
 script: eval $SCRIPT
