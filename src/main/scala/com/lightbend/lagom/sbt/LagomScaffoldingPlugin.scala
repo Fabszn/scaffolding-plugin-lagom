@@ -11,16 +11,20 @@ import sbt.complete.Parser
   */
 object LagomScaffoldingPlugin extends AutoPlugin {
 
+
+
+
+
   //definition of parser
 
   val optionnalParam: Parser[(Option[String], Option[Boolean])] = (Space ~> "org:" ~> StringBasic).? ~ (Space ~> "isTemplate:" ~> Bool).?
   val cmdParser: Parser[(String, (Option[String], Option[Boolean]))] =
     (Space ~> (StringBasic ~ optionnalParam) !!! ("Command should looks like : newService <name of service> [org:name of organisation][isTemplate:true || false]"))
 
-
-  val newJavaService = inputKey[Unit]("Create new Lagom service based on Java")
-  val newScalaService = inputKey[Unit]("Create new Lagom service based on Scala")
-
+  object autoImport {
+    val newJavaService = inputKey[Unit]("Create new Lagom service based on Java")
+    val newScalaService = inputKey[Unit]("Create new Lagom service based on Scala")
+  }
   case class Inputs(serviceName: String, packName: String, template: Boolean)
 
 
@@ -40,7 +44,8 @@ object LagomScaffoldingPlugin extends AutoPlugin {
     }
 
   }
-
+  import autoImport._
+  override def trigger = allRequirements
   override def projectSettings = {
     Seq(newJavaService := {
       implicit val log = streams.value.log
@@ -60,7 +65,7 @@ object LagomScaffoldingPlugin extends AutoPlugin {
         createInterfaceFile(input.packName, input.serviceName, apiDir)
         createImplFiles(input.packName, input.serviceName.capitalize, implDir)
         createConfFile(input.packName, input.serviceName, confDir)
-        addServiceConfToBuild( baseDirectory.value,input)
+        addServiceConfToBuild(baseDirectory.value, input)
         log.info("Lagom(Java) has been generated successfully")
       }
 
@@ -134,18 +139,18 @@ object LagomScaffoldingPlugin extends AutoPlugin {
 
       }
 
-      def addServiceConfToBuild(dir: File, input:Inputs) = {
+      def addServiceConfToBuild(dir: File, input: Inputs) = {
         val sbtConf =
           s"""
              |
              |//${input.serviceName} service
-             |lazy val ${input.serviceName}Api = ${computeProjectDeclaration(input.serviceName+"-api",input.template)}
+             |lazy val ${input.serviceName}Api = ${computeProjectDeclaration(input.serviceName + "-api", input.template)}
              |  .settings(
              |    version := "1.0-SNAPSHOT",
              |    libraryDependencies += lagomJavadslApi
              |  )
              |
-             |lazy val ${input.serviceName}Impl = ${computeProjectDeclaration(input.serviceName+"-impl",input.template)}
+             |lazy val ${input.serviceName}Impl = ${computeProjectDeclaration(input.serviceName + "-impl", input.template)}
              |  .enablePlugins(LagomJava)
              |  .settings(
              |    version := "1.0-SNAPSHOT",
@@ -175,7 +180,6 @@ object LagomScaffoldingPlugin extends AutoPlugin {
       }
 
 
-
     }, newScalaService := {
       implicit val log = streams.value.log
 
@@ -198,7 +202,7 @@ object LagomScaffoldingPlugin extends AutoPlugin {
         createImplFiles(input.packName, input.serviceName.capitalize, implDir)
         createConfFile(input.packName, input.serviceName, confDir)
         createConverterFile(baseDirectory.value / ((input.serviceName + "-impl") + "/" + sourceDir + "/"))
-        addServiceConfToBuild(baseDirectory.value,input)
+        addServiceConfToBuild(baseDirectory.value, input)
         log.info("Lagom(Scala) has been generated successfully")
       }
 
@@ -285,18 +289,18 @@ object LagomScaffoldingPlugin extends AutoPlugin {
         IO.append(dir / ("application.conf"), applicationConf)
       }
 
-      def addServiceConfToBuild(dir: File, input:Inputs) = {
+      def addServiceConfToBuild(dir: File, input: Inputs) = {
         val sbtConf =
           s"""
              |
              |//${name} service
-             |lazy val ${input.serviceName}Api = ${computeProjectDeclaration(input.serviceName+"-api",input.template)}
+             |lazy val ${input.serviceName}Api = ${computeProjectDeclaration(input.serviceName + "-api", input.template)}
              |  .settings(
              |    version := "1.0-SNAPSHOT",
              |    libraryDependencies += lagomJavadslApi
              |  )
              |
-             |lazy val ${input.serviceName}Impl = ${computeProjectDeclaration(input.serviceName+"-impl",input.template)}
+             |lazy val ${input.serviceName}Impl = ${computeProjectDeclaration(input.serviceName + "-impl", input.template)}
              |  .enablePlugins(LagomJava)
              |  .settings(
              |    scalacOptions in Compile += "-Xexperimental", // this enables Scala lambdas to be passed as Java SAMs

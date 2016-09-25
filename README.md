@@ -41,14 +41,8 @@ addSbtPlugin("com.lightbend.lagom.sbt" %% "scaffolding-plugin-lagom" % "1.0.0-xx
 
 ```
 (*where 'xx' corresponds to the latest version, check on the bintray repository*)
-then, enable the plugin at root project level, in your *build.sbt* file as follow :
 
-```
-lazy val root = (project in file("."))
-    .enablePlugins(LagomScaffoldingPlugin)
-```
-
-Setting up is now finished. you should find new task named : *newJavaService*
+Setting up is now finished. you should find new task named : *newJavaService* (and newScalaService)
 
 # How use the plugin
 
@@ -74,7 +68,7 @@ new*Service myService isTemplate:true
 *(more details at the end of this page)*
 
 
-# One more thing :
+# One more thing
 
 Today, Lagom framework provided a Java API, however, with a trick, you can start to work with the Scala language. For that, the plugin provide another task that generate the service based on Scala language. Instead of used the task **newJavaService**, use the task **newScalaService** as described below:
 
