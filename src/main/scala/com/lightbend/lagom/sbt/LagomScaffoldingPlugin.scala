@@ -134,8 +134,88 @@ object LagomScaffoldingPlugin extends AutoPlugin {
               |  }
               |}""".stripMargin
 
+        val command =
+          s"""package $packName;
+             |
+             |import com.lightbend.lagom.serialization.Jsonable;
+             |
+             |public interface ${name}Command extends Jsonable {}
+           """.stripMargin
+
+        val eventTag =
+          s"""package $packName;
+             |
+             |import com.lightbend.lagom.javadsl.persistence.AggregateEventTag;
+             |
+             |public class ${name}EventTag {
+             |
+             |  public static final AggregateEventTag<${name}Event> INSTANCE =
+             |    AggregateEventTag.of(${name}Event.class);
+             |}
+           """.stripMargin
+
+        val event =
+          s"""package $packName;
+             |
+             |import com.lightbend.lagom.javadsl.persistence.AggregateEvent;
+             |import com.lightbend.lagom.javadsl.persistence.AggregateEventTag;
+             |import com.lightbend.lagom.serialization.Jsonable;
+             |
+             |public interface ${name}Event extends Jsonable, AggregateEvent<${name}Event> {
+             |
+             |  @Override
+             |  default public AggregateEventTag<${name}Event> aggregateTag() {
+             |    return ${name}EventTag.INSTANCE;
+             |  }
+             |}
+           """.stripMargin
+
+        val state =
+          s"""package $packName;
+             |
+             |import javax.annotation.concurrent.Immutable;
+             |import com.fasterxml.jackson.annotation.JsonCreator;
+             |import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+             |import com.google.common.base.Preconditions;
+             |import com.lightbend.lagom.serialization.Jsonable;
+             |
+             |@SuppressWarnings("serial")
+             |@Immutable
+             |@JsonDeserialize
+             |public final class UserState implements Jsonable {
+             |  public final String name;
+             |
+             |  @JsonCreator
+             |  public ${name}State(String name) {
+             |    this.name = Preconditions.checkNotNull(name, "name");
+             |  }
+             |}
+           """.stripMargin
+
+        val entity =
+          s"""package $packName;
+             |
+             |import java.util.Optional;
+             |import com.lightbend.lagom.javadsl.persistence.PersistentEntity;
+             |
+             |public class ${name}Entity extends PersistentEntity<${name}Command, ${name}Event, ${name}State> {
+             |  @Override
+             |  public Behavior initialBehavior(Optional<${name}State> snapshotState) {
+             |    BehaviorBuilder b = newBehaviorBuilder(snapshotState.orElse(
+             |      new ${name}State("")));
+             |
+             |    return b.build();
+             |  }
+             |}
+           """.stripMargin
+
         IO.append(dir / (s"${name}ServiceImpl.java"), implementation)
         IO.append(dir / (s"${name}ServiceModule.java"), module)
+        IO.append(dir / (s"${name}Command.java"), command)
+        IO.append(dir / (s"${name}EventTag.java"), eventTag)
+        IO.append(dir / (s"${name}Event.java"), event)
+        IO.append(dir / (s"${name}State.java"), state)
+        IO.append(dir / (s"${name}Entity.java"), entity)
 
       }
 
@@ -273,8 +353,63 @@ object LagomScaffoldingPlugin extends AutoPlugin {
               |
             |}""".stripMargin
 
+        val command =
+          s"""package $packName
+             |
+             |import com.lightbend.lagom.javadsl.persistence.PersistentEntity
+              |import com.lightbend.lagom.serialization.Jsonable
+              |import akka.Done
+              |
+              |sealed trait ${name}Command extends Jsonable
+           """.stripMargin
+
+        val event =
+          s"""package $packName
+             |
+             |import com.lightbend.lagom.javadsl.persistence.AggregateEvent
+              |import com.lightbend.lagom.serialization.Jsonable
+              |import com.lightbend.lagom.javadsl.persistence.AggregateEventTag
+              |
+              |object ${name}Event {
+              |  val Tag = AggregateEventTag.of(classOf[${name}Event])
+              |}
+              |sealed trait ${name}Event extends AggregateEvent[${name}Event] with Jsonable {
+              |  override def aggregateTag(): AggregateEventTag[${name}Event] = ${name}Event.Tag
+              |}
+           """.stripMargin
+
+        val state =
+          s"""package $packName
+             |
+             |import com.lightbend.lagom.serialization.Jsonable
+             |
+             |class ${name}State extends Jsonable {}
+           """.stripMargin
+
+        val entity =
+          s"""package $packName
+             |
+             |import com.lightbend.lagom.javadsl.persistence.PersistentEntity
+              |import scala.collection.JavaConverters._
+              |import akka.Done
+              |import java.util.Optional
+              |import scala.compat.java8.OptionConverters._
+              |
+              |class ${name}Entity extends PersistentEntity[${name}Command, ${name}Event, ${name}State] {
+              |
+              |  override def initialBehavior(snapshotState: Optional[${name}State]): Behavior = {
+              |    val b = newBehaviorBuilder(snapshotState.orElseGet(() => ${name}State()))
+              |    b.build()
+              |  }
+              |}
+           """.stripMargin
+
         IO.append(dir / (s"${name}ServiceImpl.scala"), implementation)
         IO.append(dir / (s"${name}ServiceModule.scala"), module)
+        IO.append(dir / (s"${name}Commands.scala"), command)
+        IO.append(dir / (s"${name}Events.scala"), event)
+        IO.append(dir / (s"${name}State.scala"), state)
+        IO.append(dir / (s"${name}Entity.scala"), entity)
 
       }
       def createConfFile(packName: String, name: String, dir: File): Unit = {
