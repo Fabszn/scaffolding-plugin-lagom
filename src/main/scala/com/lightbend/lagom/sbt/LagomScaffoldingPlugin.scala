@@ -1,7 +1,7 @@
 package com.lightbend.lagom.sbt
 
 import sbt.Keys._
-import sbt.{RootProject, _}
+import sbt._
 import sbt.complete.DefaultParsers._
 import sbt.complete.Parser
 
@@ -54,326 +54,326 @@ object LagomScaffoldingPlugin extends AutoPlugin {
   override def trigger = allRequirements
 
   override def projectSettings = {
-      newJavaService := {
-        implicit val log = streams.value.log
-        buildService(paramExtractor(cmdParser.parsed, organization.value))
+    Seq(newJavaService := {
+      implicit val log = streams.value.log
+      buildService(paramExtractor(cmdParser.parsed, organization.value))
 
-        def buildService(input: Inputs): Unit = {
-          val bs = buildStructure.value
-          if (rootProjectFilter(bs.root, thisProject.value.base.toURI)) {
-            val sourceDir = "src/main/java"
-            val resourceDir = "src/main/resources"
-            log.info(managePack(input.packName))
-            val apiDir = baseDirectory.value / ((input.serviceName + "-api") + "/" + sourceDir + "/" + managePack(input.packName))
-            val implDir = baseDirectory.value / ((input.serviceName + "-impl") + "/" + sourceDir + "/" + managePack(input.packName))
-            val confDir = baseDirectory.value / ((input.serviceName + "-impl") + "/" + resourceDir)
+      def buildService(input: Inputs): Unit = {
+        val bs = buildStructure.value
+        if (rootProjectFilter(bs.root, thisProject.value.base.toURI)) {
+          val sourceDir = "src/main/java"
+          val resourceDir = "src/main/resources"
+          log.info(managePack(input.packName))
+          val apiDir = baseDirectory.value / ((input.serviceName + "-api") + "/" + sourceDir + "/" + managePack(input.packName))
+          val implDir = baseDirectory.value / ((input.serviceName + "-impl") + "/" + sourceDir + "/" + managePack(input.packName))
+          val confDir = baseDirectory.value / ((input.serviceName + "-impl") + "/" + resourceDir)
 
-            //create directories
-            IO.createDirectories(List(apiDir, implDir))
-            createInterfaceFile(input.packName, input.serviceName, apiDir)
-            createImplFiles(input.packName, input.serviceName.capitalize, implDir)
-            createConfFile(input.packName, input.serviceName, confDir)
-            addServiceConfToBuild(baseDirectory.value, input)
-            log.info("Lagom(Java) has been generated successfully")
-          }
+          //create directories
+          IO.createDirectories(List(apiDir, implDir))
+          createInterfaceFile(input.packName, input.serviceName, apiDir)
+          createImplFiles(input.packName, input.serviceName.capitalize, implDir)
+          createConfFile(input.packName, input.serviceName, confDir)
+          addServiceConfToBuild(baseDirectory.value, input)
+          log.info("Lagom(Java) has been generated successfully")
         }
+      }
 
-        def managePack(packName: String): String = packName.replace(".", "/")
+      def managePack(packName: String): String = packName.replace(".", "/")
 
-        def createInterfaceFile(packName: String, name: String, dir: File): Unit = {
+      def createInterfaceFile(packName: String, name: String, dir: File): Unit = {
 
-          val interface =
-            s"""
-               |/*
-               | * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
-               | */
-               |package $packName ;
-               |
+        val interface =
+          s"""
+             |/*
+             | * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
+             | */
+             |package $packName ;
+             |
              |import com.lightbend.lagom.javadsl.api.Descriptor;
-               |import com.lightbend.lagom.javadsl.api.Service;
-               |import static com.lightbend.lagom.javadsl.api.Service.*;
-               |
+             |import com.lightbend.lagom.javadsl.api.Service;
+             |import static com.lightbend.lagom.javadsl.api.Service.*;
+             |
              |public interface ${name.capitalize}Service extends Service {
-               |
+             |
              |    @Override
-               |    default Descriptor descriptor() {
-               |        return named("$name");
-               |    }
-               |}
+             |    default Descriptor descriptor() {
+             |        return named("$name");
+             |    }
+             |}
         """.stripMargin
 
-          IO.append(dir / (s"${name.capitalize}Service.java"), interface)
-        }
+        IO.append(dir / s"${name.capitalize}Service.java", interface)
+      }
 
-        def createImplFiles(packName: String, name: String, dir: File): Unit = {
-          val implementation =
-            s"""/*
-                | * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
-                | */
-                |package $packName;
-                |
+      def createImplFiles(packName: String, name: String, dir: File): Unit = {
+        val implementation =
+          s"""/*
+              | * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
+              | */
+              |package $packName;
+              |
               |import $packName.${name}Service;
-                |
+              |
               |
               |/**
-                | * Implementation of the ${name}Service.
-                | */
-                |public class ${name}ServiceImpl implements ${name}Service {
-                |
+              | * Implementation of the ${name}Service.
+              | */
+              |public class ${name}ServiceImpl implements ${name}Service {
+              |
               |    //TODO implement service interface
-                |
+              |
               |}
-                |""".stripMargin
+              |""".stripMargin
 
-          val module =
-            s"""package $packName;
-                |
+        val module =
+          s"""package $packName;
+              |
               |import com.google.inject.AbstractModule;
-                |import com.lightbend.lagom.javadsl.server.ServiceGuiceSupport;
-                |import $packName.${name}Service;
-                |import $packName.${name}ServiceImpl;
-                |
+              |import com.lightbend.lagom.javadsl.server.ServiceGuiceSupport;
+              |import $packName.${name}Service;
+              |import $packName.${name}ServiceImpl;
+              |
               |/**
-                | * The module that binds the ${name}ServiceModule so that it can be served.
-                | */
-                |public class ${name}ServiceModule extends AbstractModule implements ServiceGuiceSupport {
-                |  @Override
-                |  protected void configure() {
-                |    bindServices(serviceBinding(${name}Service.class, ${name}ServiceImpl.class));
-                |  }
-                |}""".stripMargin
+              | * The module that binds the ${name}ServiceModule so that it can be served.
+              | */
+              |public class ${name}ServiceModule extends AbstractModule implements ServiceGuiceSupport {
+              |  @Override
+              |  protected void configure() {
+              |    bindServices(serviceBinding(${name}Service.class, ${name}ServiceImpl.class));
+              |  }
+              |}""".stripMargin
 
-          IO.append(dir / (s"${name}ServiceImpl.java"), implementation)
-          IO.append(dir / (s"${name}ServiceModule.java"), module)
+        IO.append(dir / s"${name}ServiceImpl.java", implementation)
+        IO.append(dir / s"${name}ServiceModule.java", module)
 
-        }
+      }
 
-        def addServiceConfToBuild(dir: File, input: Inputs) = {
-          val sbtConf =
-            s"""
-               |
+      def addServiceConfToBuild(dir: File, input: Inputs) = {
+        val sbtConf =
+          s"""
+             |
              |//${input.serviceName} service
-               |lazy val ${input.serviceName}Api = ${computeProjectDeclaration(input.serviceName + "-api", input.template)}
-               |  .settings(
-               |    version := "1.0-SNAPSHOT",
-               |    libraryDependencies += lagomJavadslApi
-               |  )
-               |
+             |lazy val ${input.serviceName}Api = ${computeProjectDeclaration(input.serviceName + "-api", input.template)}
+             |  .settings(
+             |    version := "1.0-SNAPSHOT",
+             |    libraryDependencies += lagomJavadslApi
+             |  )
+             |
              |lazy val ${input.serviceName}Impl = ${computeProjectDeclaration(input.serviceName + "-impl", input.template)}
-               |  .enablePlugins(LagomJava)
-               |  .settings(
-               |    version := "1.0-SNAPSHOT",
-               |    libraryDependencies ++= Seq(
-               |      lagomJavadslPersistence,
-               |      lagomJavadslTestKit
-               |    )
-               |  )
-               |  .settings(lagomForkedTestSettings: _*)
-               |  .dependsOn("${input.serviceName}Api")""".stripMargin
+             |  .enablePlugins(LagomJava)
+             |  .settings(
+             |    version := "1.0-SNAPSHOT",
+             |    libraryDependencies ++= Seq(
+             |      lagomJavadslPersistence,
+             |      lagomJavadslTestKit
+             |    )
+             |  )
+             |  .settings(lagomForkedTestSettings: _*)
+             |  .dependsOn("${input.serviceName}Api")""".stripMargin
 
-          IO.append(dir / ("build.sbt"), sbtConf)
+        IO.append(dir / ("build.sbt"), sbtConf)
+      }
+
+
+
+      def createConfFile(packName: String, name: String, dir: File): Unit = {
+
+        val applicationConf =
+          s"""#
+              |# Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
+              |#
+              |play.modules.enabled += $packName.${name.capitalize}ServiceModule
+              |""".stripMargin
+
+        IO.append(dir / ("application.conf"), applicationConf)
+      }
+
+
+    }, newScalaService := {
+      implicit val log = streams.value.log
+
+      buildService(paramExtractor(cmdParser.parsed, organization.value))
+
+      def buildService(input: Inputs): Unit = {
+
+        val bs = buildStructure.value
+        if (rootProjectFilter(bs.root, thisProject.value.base.toURI)) {
+          if (input.packName.isEmpty) log.warn("No package has been defined")
+          val sourceDir = "src/main/scala"
+          val resourceDir = "src/main/resources"
+          log.info(managePackageName(input.packName))
+          log.info(baseDirectory.value.toString)
+          val apiDir = baseDirectory.value / ((input.serviceName + "-api") + "/" + sourceDir + "/" + managePackageName(input.packName))
+          val implDir = baseDirectory.value / ((input.serviceName + "-impl") + "/" + sourceDir + "/" + managePackageName(input.packName))
+          val confDir = baseDirectory.value / ((input.serviceName + "-impl") + "/" + resourceDir)
+
+          //create directories
+          IO.createDirectories(List(apiDir, implDir))
+          createInterfaceFile(input.packName, input.serviceName, apiDir)
+          createImplFiles(input.packName, input.serviceName.capitalize, implDir)
+          createConfFile(input.packName, input.serviceName, confDir)
+          createConverterFile(baseDirectory.value / ((input.serviceName + "-impl") + "/" + sourceDir + "/"))
+          addServiceConfToBuild(baseDirectory.value, input)
+          log.info("Lagom(Scala) has been generated successfully")
         }
+      }
 
+      def managePackageName(packName: String): String = packName.replace(".", "/")
 
+      def createInterfaceFile(packName: String, name: String, dir: File): Unit = {
 
-        def createConfFile(packName: String, name: String, dir: File): Unit = {
-
-          val applicationConf =
-            s"""#
-                |# Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
-                |#
-                |play.modules.enabled += $packName.${name.capitalize}ServiceModule
-                |""".stripMargin
-
-          IO.append(dir / ("application.conf"), applicationConf)
-        }
-
-
-      }, newScalaService := {
-        implicit val log = streams.value.log
-
-        buildService(paramExtractor(cmdParser.parsed, organization.value))
-
-        def buildService(input: Inputs): Unit = {
-
-          val bs = buildStructure.value
-          if (rootProjectFilter(bs.root, thisProject.value.base.toURI)) {
-            if (input.packName.isEmpty) log.warn("No package has been defined")
-            val sourceDir = "src/main/scala"
-            val resourceDir = "src/main/resources"
-            log.info(managePackageName(input.packName))
-            log.info(baseDirectory.value.toString)
-            val apiDir = baseDirectory.value / ((input.serviceName + "-api") + "/" + sourceDir + "/" + managePackageName(input.packName))
-            val implDir = baseDirectory.value / ((input.serviceName + "-impl") + "/" + sourceDir + "/" + managePackageName(input.packName))
-            val confDir = baseDirectory.value / ((input.serviceName + "-impl") + "/" + resourceDir)
-
-            //create directories
-            IO.createDirectories(List(apiDir, implDir))
-            createInterfaceFile(input.packName, input.serviceName, apiDir)
-            createImplFiles(input.packName, input.serviceName.capitalize, implDir)
-            createConfFile(input.packName, input.serviceName, confDir)
-            createConverterFile(baseDirectory.value / ((input.serviceName + "-impl") + "/" + sourceDir + "/"))
-            addServiceConfToBuild(baseDirectory.value, input)
-            log.info("Lagom(Scala) has been generated successfully")
-          }
-        }
-
-        def managePackageName(packName: String): String = packName.replace(".", "/")
-
-        def createInterfaceFile(packName: String, name: String, dir: File): Unit = {
-
-          val interface =
-            s"""
-               |/*
-               | * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
-               | */
-               |package $packName
-               |
+        val interface =
+          s"""
+             |/*
+             | * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
+             | */
+             |package $packName
+             |
            |import akka.stream.javadsl.Source
-               |
+             |
            |import akka.NotUsed
-               |import com.lightbend.lagom.javadsl.api.Descriptor
-               |import com.lightbend.lagom.javadsl.api.ScalaService._
-               |import com.lightbend.lagom.javadsl.api.Service
-               |import com.lightbend.lagom.javadsl.api.ServiceCall
-               |
+             |import com.lightbend.lagom.javadsl.api.Descriptor
+             |import com.lightbend.lagom.javadsl.api.ScalaService._
+             |import com.lightbend.lagom.javadsl.api.Service
+             |import com.lightbend.lagom.javadsl.api.ServiceCall
+             |
            |trait ${name.capitalize}Service extends Service {
-               |
+             |
            |  override def descriptor(): Descriptor = {
-               |    named("${name.capitalize}")
-               |    }
-               |}
+             |    named("${name.capitalize}")
+             |    }
+             |}
         """.stripMargin
 
-          IO.append(dir / (s"${name.capitalize}Service.scala"), interface)
-        }
+        IO.append(dir / (s"${name.capitalize}Service.scala"), interface)
+      }
 
-        def createImplFiles(packName: String, name: String, dir: File): Unit = {
-          val implementation =
-            s"""/*
-                | * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
-                | */
-                |package $packName
-                |
+      def createImplFiles(packName: String, name: String, dir: File): Unit = {
+        val implementation =
+          s"""/*
+              | * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
+              | */
+              |package $packName
+              |
             |import javax.inject.Inject
-                |
+              |
             |import com.lightbend.lagom.javadsl.api.ServiceCall
-                |import akka.Done
-                |import akka.NotUsed
-                |
+              |import akka.Done
+              |import akka.NotUsed
+              |
             |import scala.concurrent.{ExecutionContext, Future}
-                |
+              |
             |class ${name}ServiceImpl @Inject()()(implicit ex: ExecutionContext) extends ${name}Service {
-                |
+              |
             |  // Needed to convert some Scala types to Java
-                |  import converter.ServiceCallConverter._
-                |}
-                |
+              |  import converter.ServiceCallConverter._
+              |}
+              |
             |""".stripMargin
 
-          val module =
-            s"""package $packName
-                |
+        val module =
+          s"""package $packName
+              |
               |import com.google.inject.AbstractModule
-                |import com.lightbend.lagom.javadsl.server.ServiceGuiceSupport
-                |
+              |import com.lightbend.lagom.javadsl.server.ServiceGuiceSupport
+              |
             |/**
-                | * The module that binds the ${name}ServiceModule so that it can be served.
-                | */
-                |class ${name}ServiceModule extends AbstractModule with ServiceGuiceSupport {
-                |override def configure(): Unit = bindServices(serviceBinding(classOf[${name}Service], classOf[${name}ServiceImpl]))
-                |
+              | * The module that binds the ${name}ServiceModule so that it can be served.
+              | */
+              |class ${name}ServiceModule extends AbstractModule with ServiceGuiceSupport {
+              |override def configure(): Unit = bindServices(serviceBinding(classOf[${name}Service], classOf[${name}ServiceImpl]))
+              |
             |}""".stripMargin
 
-          IO.append(dir / (s"${name}ServiceImpl.scala"), implementation)
-          IO.append(dir / (s"${name}ServiceModule.scala"), module)
+        IO.append(dir / (s"${name}ServiceImpl.scala"), implementation)
+        IO.append(dir / (s"${name}ServiceModule.scala"), module)
 
-        }
-        def createConfFile(packName: String, name: String, dir: File): Unit = {
+      }
+      def createConfFile(packName: String, name: String, dir: File): Unit = {
 
-          val applicationConf =
-            s"""#
-                |# Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
-                |#
-                |play.modules.enabled += $packName.${name.capitalize}ServiceModule
-                |""".stripMargin
+        val applicationConf =
+          s"""#
+              |# Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
+              |#
+              |play.modules.enabled += $packName.${name.capitalize}ServiceModule
+              |""".stripMargin
 
-          IO.append(dir / ("application.conf"), applicationConf)
-        }
+        IO.append(dir / ("application.conf"), applicationConf)
+      }
 
-        def addServiceConfToBuild(dir: File, input: Inputs) = {
-          val sbtConf =
-            s"""
-               |
-             |//${name} service
-               |lazy val ${input.serviceName}Api = ${computeProjectDeclaration(input.serviceName + "-api", input.template)}
-               |  .settings(
-               |    version := "1.0-SNAPSHOT",
-               |    libraryDependencies += lagomJavadslApi
-               |  )
-               |
+      def addServiceConfToBuild(dir: File, input: Inputs) = {
+        val sbtConf =
+          s"""
+             |
+             |//${input.serviceName} service
+             |lazy val ${input.serviceName}Api = ${computeProjectDeclaration(input.serviceName + "-api", input.template)}
+             |  .settings(
+             |    version := "1.0-SNAPSHOT",
+             |    libraryDependencies += lagomJavadslApi
+             |  )
+             |
              |lazy val ${input.serviceName}Impl = ${computeProjectDeclaration(input.serviceName + "-impl", input.template)}
-               |  .enablePlugins(LagomJava)
-               |  .settings(
-               |    scalacOptions in Compile += "-Xexperimental", // this enables Scala lambdas to be passed as Java SAMs
-               |    version := "1.0-SNAPSHOT",
-               |    libraryDependencies ++= Seq(
-               |      lagomJavadslPersistence,
-               |      lagomJavadslTestKit
-               |    )
-               |  )
-               |  .settings(lagomForkedTestSettings: _*)
-               |  .dependsOn(${input.serviceName}Api)""".stripMargin
+             |  .enablePlugins(LagomJava)
+             |  .settings(
+             |    scalacOptions in Compile += "-Xexperimental", // this enables Scala lambdas to be passed as Java SAMs
+             |    version := "1.0-SNAPSHOT",
+             |    libraryDependencies ++= Seq(
+             |      lagomJavadslPersistence,
+             |      lagomJavadslTestKit
+             |    )
+             |  )
+             |  .settings(lagomForkedTestSettings: _*)
+             |  .dependsOn(${input.serviceName}Api)""".stripMargin
 
-          IO.append(dir / ("build.sbt"), sbtConf)
-        }
+        IO.append(dir / ("build.sbt"), sbtConf)
+      }
 
-        def createConverterFile(dir: File) = {
-          val serviceCallConverter =
-            s"""
-               |
+      def createConverterFile(dir: File) = {
+        val serviceCallConverter =
+          s"""
+             |
              |package converter
-               |
+             |
              |import java.util.concurrent.CompletionStage
-               |
+             |
              |import com.lightbend.lagom.javadsl.api.ServiceCall
-               |
+             |
              |object ServiceCallConverter extends CompletionStageConverters {
-               |  implicit def liftToServiceCall[Request, Response](f: Request => CompletionStage[Response]): ServiceCall[Request,Response] =
-               |    new ServiceCall[Request,Response] {
-               |      def invoke(request: Request): CompletionStage[Response] = f(request)
-               |  }
-               |}""".stripMargin
+             |  implicit def liftToServiceCall[Request, Response](f: Request => CompletionStage[Response]): ServiceCall[Request,Response] =
+             |    new ServiceCall[Request,Response] {
+             |      def invoke(request: Request): CompletionStage[Response] = f(request)
+             |  }
+             |}""".stripMargin
 
-          IO.append(dir / "converter" / ("ServiceCallConverter.scala"), serviceCallConverter)
+        IO.append(dir / "converter" / ("ServiceCallConverter.scala"), serviceCallConverter)
 
-          val CompletionStageConverters =
-            s"""
-               |
+        val CompletionStageConverters =
+          s"""
+             |
              |package converter
-               |
+             |
              |import java.util.concurrent.CompletionStage
-               |
+             |
              |import scala.compat.java8.FutureConverters.CompletionStageOps
-               |import scala.compat.java8.FutureConverters.FutureOps
-               |import scala.concurrent.Future
-               |
+             |import scala.compat.java8.FutureConverters.FutureOps
+             |import scala.concurrent.Future
+             |
              |import akka.NotUsed
-               |
+             |
              |trait CompletionStageConverters {
-               |
+             |
              |  implicit def asCompletionStage[A](f: Future[A]): CompletionStage[A] = f.toJava
-               |  implicit def asFuture[A](f: CompletionStage[A]): Future[A] = f.toScala
-               |
+             |  implicit def asFuture[A](f: CompletionStage[A]): Future[A] = f.toScala
+             |
              |  implicit def asUnusedCompletionStage(f: CompletionStage[_]): CompletionStage[NotUsed] = f.thenApply(_ => NotUsed)
-               |}
-               |
+             |}
+             |
              |object CompletionStageConverters extends CompletionStageConverters""".stripMargin
 
-          IO.append(dir / "converter" / ("CompletionStageConverters.scala"), CompletionStageConverters)
-        }
+        IO.append(dir / "converter" / ("CompletionStageConverters.scala"), CompletionStageConverters)
+      }
 
-      })
+    })
 
   }
 
