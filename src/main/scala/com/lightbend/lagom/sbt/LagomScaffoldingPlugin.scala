@@ -108,40 +108,40 @@ object LagomScaffoldingPlugin extends AutoPlugin {
       def createImplFiles(packName: String, name: String, dir: File): Unit = {
         val implementation =
           s"""/*
-              | * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
-              | */
-              |package $packName;
-              |
+             | * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
+             | */
+             |package $packName;
+             |
               |import $packName.${name}Service;
-              |
+             |
               |
               |/**
-              | * Implementation of the ${name}Service.
-              | */
-              |public class ${name}ServiceImpl implements ${name}Service {
-              |
+             | * Implementation of the ${name}Service.
+             | */
+             |public class ${name}ServiceImpl implements ${name}Service {
+             |
               |    //TODO implement service interface
-              |
+             |
               |}
-              |""".stripMargin
+             |""".stripMargin
 
         val module =
           s"""package $packName;
-              |
+             |
               |import com.google.inject.AbstractModule;
-              |import com.lightbend.lagom.javadsl.server.ServiceGuiceSupport;
-              |import $packName.${name}Service;
-              |import $packName.${name}ServiceImpl;
-              |
+             |import com.lightbend.lagom.javadsl.server.ServiceGuiceSupport;
+             |import $packName.${name}Service;
+             |import $packName.${name}ServiceImpl;
+             |
               |/**
-              | * The module that binds the ${name}ServiceModule so that it can be served.
-              | */
-              |public class ${name}ServiceModule extends AbstractModule implements ServiceGuiceSupport {
-              |  @Override
-              |  protected void configure() {
-              |    bindServices(serviceBinding(${name}Service.class, ${name}ServiceImpl.class));
-              |  }
-              |}""".stripMargin
+             | * The module that binds the ${name}ServiceModule so that it can be served.
+             | */
+             |public class ${name}ServiceModule extends AbstractModule implements ServiceGuiceSupport {
+             |  @Override
+             |  protected void configure() {
+             |    bindServices(serviceBinding(${name}Service.class, ${name}ServiceImpl.class));
+             |  }
+             |}""".stripMargin
 
         IO.append(dir / s"${name}ServiceImpl.java", implementation)
         IO.append(dir / s"${name}ServiceModule.java", module)
@@ -175,15 +175,14 @@ object LagomScaffoldingPlugin extends AutoPlugin {
       }
 
 
-
       def createConfFile(packName: String, name: String, dir: File): Unit = {
 
         val applicationConf =
           s"""#
-              |# Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
-              |#
-              |play.modules.enabled += $packName.${name.capitalize}ServiceModule
-              |""".stripMargin
+             |# Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
+             |#
+             |play.modules.enabled += $packName.${name.capitalize}ServiceModule
+             |""".stripMargin
 
         IO.append(dir / ("application.conf"), applicationConf)
       }
@@ -212,7 +211,7 @@ object LagomScaffoldingPlugin extends AutoPlugin {
           createInterfaceFile(input.packName, input.serviceName, apiDir)
           createImplFiles(input.packName, input.serviceName.capitalize, implDir)
           createConfFile(input.packName, input.serviceName, confDir)
-          createConverterFile(baseDirectory.value / ((input.serviceName + "-impl") + "/" + sourceDir + "/"))
+          //createConverterFile(baseDirectory.value / ((input.serviceName + "-impl") + "/" + sourceDir + "/"))
           addServiceConfToBuild(baseDirectory.value, input)
           log.info("Lagom(Scala) has been generated successfully")
         }
@@ -229,18 +228,19 @@ object LagomScaffoldingPlugin extends AutoPlugin {
              | */
              |package $packName
              |
-           |import akka.stream.javadsl.Source
+             |import com.lightbend.lagom.scaladsl.api.{Service, ServiceCall}
+             |import akka.NotUsed
              |
-           |import akka.NotUsed
-             |import com.lightbend.lagom.javadsl.api.Descriptor
-             |import com.lightbend.lagom.javadsl.api.ScalaService._
-             |import com.lightbend.lagom.javadsl.api.Service
-             |import com.lightbend.lagom.javadsl.api.ServiceCall
              |
-           |trait ${name.capitalize}Service extends Service {
+             |trait ${name.capitalize}Service extends Service {
              |
-           |  override def descriptor(): Descriptor = {
-             |    named("${name.capitalize}")
+             |  def sample: ServiceCall[NotUsed, String]
+             |
+             | override final def descriptor = {
+             |   import Service._
+             |    named("${name.capitalize}").withCalls(
+             |         namedCall("/api/sample", sample _).withAutoAcl(true)
+             |      )
              |    }
              |}
         """.stripMargin
@@ -249,54 +249,78 @@ object LagomScaffoldingPlugin extends AutoPlugin {
       }
 
       def createImplFiles(packName: String, name: String, dir: File): Unit = {
+        val loader =
+          s"""
+             |package $packName
+             |
+            |import com.lightbend.lagom.scaladsl.api.ServiceLocator
+             |import com.lightbend.lagom.scaladsl.api.ServiceLocator.NoServiceLocator
+             |import com.lightbend.lagom.scaladsl.server._
+             |import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
+             |import play.api.libs.ws.ahc.AhcWSComponents
+             |import com.softwaremill.macwire._
+             |
+            |class ${name}Loader extends LagomApplicationLoader {
+             |
+            |  override def load(context: LagomApplicationContext): LagomApplication =
+             |    new ${name}Application(context) {
+             |      override def serviceLocator: ServiceLocator = NoServiceLocator
+             |    }
+             |
+            |  override def loadDevMode(context: LagomApplicationContext): LagomApplication =
+             |    new ${name}Application(context) with LagomDevModeComponents
+             |
+            |  override def describeServices = List(
+             |    readDescriptor[${name}Service]
+             |  )
+             |}
+             |
+            |abstract class ${name}Application(context: LagomApplicationContext)
+             |  extends LagomApplication(context)
+             |    with AhcWSComponents {
+             |
+            |  // Bind the service that this server provides
+             |  override lazy val lagomServer = serverFor[${name}Service](wire[${name}ServiceImpl])
+             |
+             |
+            |}
+             |
+          """.stripMargin
+
         val implementation =
           s"""/*
-              | * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
-              | */
-              |package $packName
-              |
-            |import javax.inject.Inject
-              |
-            |import com.lightbend.lagom.javadsl.api.ServiceCall
-              |import akka.Done
-              |import akka.NotUsed
-              |
-            |import scala.concurrent.{ExecutionContext, Future}
-              |
-            |class ${name}ServiceImpl @Inject()()(implicit ex: ExecutionContext) extends ${name}Service {
-              |
-            |  // Needed to convert some Scala types to Java
-              |  import converter.ServiceCallConverter._
-              |}
-              |
+             | * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
+             | */
+             |package $packName
+             |
+             |import akka.NotUsed
+             |import com.lightbend.lagom.scaladsl.api.ServiceCall
+             |
+             |import scala.concurrent.Future
+             |
+             |class ${name}ServiceImpl  extends ${name}Service {
+             |
+             |override def sample: ServiceCall[NotUsed, String] = _ => Future.successful("sample")
+             |
+             |}
+             |
             |""".stripMargin
 
-        val module =
-          s"""package $packName
-              |
-              |import com.google.inject.AbstractModule
-              |import com.lightbend.lagom.javadsl.server.ServiceGuiceSupport
-              |
-            |/**
-              | * The module that binds the ${name}ServiceModule so that it can be served.
-              | */
-              |class ${name}ServiceModule extends AbstractModule with ServiceGuiceSupport {
-              |override def configure(): Unit = bindServices(serviceBinding(classOf[${name}Service], classOf[${name}ServiceImpl]))
-              |
-            |}""".stripMargin
 
-        IO.append(dir / (s"${name}ServiceImpl.scala"), implementation)
-        IO.append(dir / (s"${name}ServiceModule.scala"), module)
+        IO.append(dir / (s"${name.capitalize}ServiceImpl.scala"), implementation)
+        IO.append(dir / (s"${name.capitalize}Loader.scala"), loader)
+
 
       }
+
       def createConfFile(packName: String, name: String, dir: File): Unit = {
 
         val applicationConf =
           s"""#
-              |# Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
-              |#
-              |play.modules.enabled += $packName.${name.capitalize}ServiceModule
-              |""".stripMargin
+             |# Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
+             |#
+             |play.application.loader = $packName.${name.capitalize}Loader
+             |""".stripMargin
 
         IO.append(dir / ("application.conf"), applicationConf)
       }
@@ -305,21 +329,21 @@ object LagomScaffoldingPlugin extends AutoPlugin {
         val sbtConf =
           s"""
              |
+             |
              |//${input.serviceName} service
              |lazy val ${input.serviceName}Api = ${computeProjectDeclaration(input.serviceName + "-api", input.template)}
              |  .settings(
              |    version := "1.0-SNAPSHOT",
-             |    libraryDependencies += lagomJavadslApi
+             |    libraryDependencies += lagomScaladslApi
              |  )
              |
              |lazy val ${input.serviceName}Impl = ${computeProjectDeclaration(input.serviceName + "-impl", input.template)}
-             |  .enablePlugins(LagomJava)
+             |  .enablePlugins(LagomScala)
              |  .settings(
              |    scalacOptions in Compile += "-Xexperimental", // this enables Scala lambdas to be passed as Java SAMs
              |    version := "1.0-SNAPSHOT",
              |    libraryDependencies ++= Seq(
-             |      lagomJavadslPersistence,
-             |      lagomJavadslTestKit
+             |      "com.softwaremill.macwire" %% "macros" % "2.2.5" % "provided"
              |    )
              |  )
              |  .settings(lagomForkedTestSettings: _*)
@@ -328,50 +352,6 @@ object LagomScaffoldingPlugin extends AutoPlugin {
         IO.append(dir / ("build.sbt"), sbtConf)
       }
 
-      def createConverterFile(dir: File) = {
-        val serviceCallConverter =
-          s"""
-             |
-             |package converter
-             |
-             |import java.util.concurrent.CompletionStage
-             |
-             |import com.lightbend.lagom.javadsl.api.ServiceCall
-             |
-             |object ServiceCallConverter extends CompletionStageConverters {
-             |  implicit def liftToServiceCall[Request, Response](f: Request => CompletionStage[Response]): ServiceCall[Request,Response] =
-             |    new ServiceCall[Request,Response] {
-             |      def invoke(request: Request): CompletionStage[Response] = f(request)
-             |  }
-             |}""".stripMargin
-
-        IO.append(dir / "converter" / ("ServiceCallConverter.scala"), serviceCallConverter)
-
-        val CompletionStageConverters =
-          s"""
-             |
-             |package converter
-             |
-             |import java.util.concurrent.CompletionStage
-             |
-             |import scala.compat.java8.FutureConverters.CompletionStageOps
-             |import scala.compat.java8.FutureConverters.FutureOps
-             |import scala.concurrent.Future
-             |
-             |import akka.NotUsed
-             |
-             |trait CompletionStageConverters {
-             |
-             |  implicit def asCompletionStage[A](f: Future[A]): CompletionStage[A] = f.toJava
-             |  implicit def asFuture[A](f: CompletionStage[A]): Future[A] = f.toScala
-             |
-             |  implicit def asUnusedCompletionStage(f: CompletionStage[_]): CompletionStage[NotUsed] = f.thenApply(_ => NotUsed)
-             |}
-             |
-             |object CompletionStageConverters extends CompletionStageConverters""".stripMargin
-
-        IO.append(dir / "converter" / ("CompletionStageConverters.scala"), CompletionStageConverters)
-      }
 
     })
 
