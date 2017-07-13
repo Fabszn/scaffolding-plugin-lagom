@@ -84,9 +84,7 @@ object LagomScaffoldingPlugin extends AutoPlugin {
 
         val interface =
           s"""
-             |/*
-             | * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
-             | */
+
              |package $packName ;
              |
              |import com.lightbend.lagom.javadsl.api.Descriptor;
@@ -107,9 +105,7 @@ object LagomScaffoldingPlugin extends AutoPlugin {
 
       def createImplFiles(packName: String, name: String, dir: File): Unit = {
         val implementation =
-          s"""/*
-             | * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
-             | */
+          s"""
              |package $packName;
              |
               |import $packName.${name}Service;
@@ -139,7 +135,7 @@ object LagomScaffoldingPlugin extends AutoPlugin {
              |public class ${name}ServiceModule extends AbstractModule implements ServiceGuiceSupport {
              |  @Override
              |  protected void configure() {
-             |    bindServices(serviceBinding(${name}Service.class, ${name}ServiceImpl.class));
+             |    bindService(${name}Service.class, ${name}ServiceImpl.class);
              |  }
              |}""".stripMargin
 
@@ -178,9 +174,7 @@ object LagomScaffoldingPlugin extends AutoPlugin {
       def createConfFile(packName: String, name: String, dir: File): Unit = {
 
         val applicationConf =
-          s"""#
-             |# Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
-             |#
+          s"""
              |play.modules.enabled += $packName.${name.capitalize}ServiceModule
              |""".stripMargin
 
@@ -223,9 +217,7 @@ object LagomScaffoldingPlugin extends AutoPlugin {
 
         val interface =
           s"""
-             |/*
-             | * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
-             | */
+
              |package $packName
              |
              |import com.lightbend.lagom.scaladsl.api.{Service, ServiceCall}
@@ -288,9 +280,8 @@ object LagomScaffoldingPlugin extends AutoPlugin {
           """.stripMargin
 
         val implementation =
-          s"""/*
-             | * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
-             | */
+          s"""
+             |
              |package $packName
              |
              |import akka.NotUsed
