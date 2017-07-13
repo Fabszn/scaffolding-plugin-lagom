@@ -160,7 +160,6 @@ object LagomScaffoldingPlugin extends AutoPlugin {
              |  .settings(
              |    version := "1.0-SNAPSHOT",
              |    libraryDependencies ++= Seq(
-             |      lagomJavadslPersistence,
              |      lagomJavadslTestKit
              |    )
              |  )
