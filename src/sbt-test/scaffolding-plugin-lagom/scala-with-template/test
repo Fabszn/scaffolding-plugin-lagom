@@ -5,7 +5,7 @@
 
 $ exists newScalaMicro-api/src/main/scala/com/test/plugin/NewScalaMicroService.scala
 $ exists newScalaMicro-impl/src/main/scala/com/test/plugin/NewScalaMicroServiceImpl.scala
-$ exists newScalaMicro-impl/src/main/scala/com/test/plugin/NewScalaMicroServiceModule.scala
+$ exists newScalaMicro-impl/src/main/scala/com/test/plugin/NewScalaMicroLoader.scala
 $ exists newScalaMicro-impl/src/main/resources/application.conf
 
 # now we start the service with `runAll` command
